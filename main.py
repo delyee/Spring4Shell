@@ -12,7 +12,7 @@ async def check(links):
         for link in links:
             try:
                 # async with client.post(url=link, data=post_data, headers=post_headers, ssl=False, allow_redirects=False) as response:
-                async with client.post(url=link, data={"script-kiddie": "must-die"}, ssl=False, allow_redirects=False) as response:
+                async with client.post(url=link, data={"c2NyaXB0LWtpZGRpZQ==": "bXVzdC1kaWU="}, ssl=False, allow_redirects=False) as response:
                     await response.text()
 
                 await asyncio.sleep(10)  # timeout, wait for creation shell..
