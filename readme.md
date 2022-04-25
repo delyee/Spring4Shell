@@ -1,4 +1,4 @@
-thanks for info - https://github.com/craig/SpringCore0day/blob/main/exp.py
+thx for info - https://github.com/craig/SpringCore0day/blob/main/exp.py
 
 ## my version:
 
